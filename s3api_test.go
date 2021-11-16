@@ -310,9 +310,9 @@ func TestListObjectV2_Delimiter_ReadDirError(t *testing.T) {
 
 	api := NewFSS3API(fsys)
 	input := &s3.ListObjectsV2Input{
-		Bucket:     aws.String("testdata"),
-		Prefix:     aws.String(""),
-		Delimiter:  aws.String("/"),
+		Bucket:    aws.String("testdata"),
+		Prefix:    aws.String(""),
+		Delimiter: aws.String("/"),
 	}
 	_, gotErr := api.ListObjectsV2(input)
 	if gotErr != wantErr {
@@ -338,9 +338,9 @@ func TestListObjectV2_Delimiter_DirEntryInfoError(t *testing.T) {
 
 	api := NewFSS3API(fsys)
 	input := &s3.ListObjectsV2Input{
-		Bucket:     aws.String("testdata"),
-		Prefix:     aws.String(""),
-		Delimiter:  aws.String("/"),
+		Bucket:    aws.String("testdata"),
+		Prefix:    aws.String(""),
+		Delimiter: aws.String("/"),
 	}
 	_, gotErr := api.ListObjectsV2(input)
 	if gotErr != wantErr {

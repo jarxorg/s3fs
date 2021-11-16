@@ -147,7 +147,7 @@ func (api *FSS3API) walkDir(input *s3.ListObjectsV2Input) (*s3.ListObjectsV2Outp
 			truncated = true
 			return fs.SkipDir
 		}
-		name := strings.TrimPrefix(p, aws.StringValue(input.Bucket) + "/")
+		name := strings.TrimPrefix(p, aws.StringValue(input.Bucket)+"/")
 		if after >= name {
 			return nil
 		}
