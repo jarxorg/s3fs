@@ -11,6 +11,17 @@ import (
 	"github.com/jarxorg/io2"
 )
 
+const defaultMaxKeys = int64(1000)
+
+func getMaxKeys(n *int64) int64 {
+	i := aws.Int64Value(n)
+	if i <= 0 {
+		return defaultMaxKeys
+	}
+	return i
+}
+
+// FSS3API provides a simple implementation for mocking on test of s3fs package.
 type FSS3API struct {
 	s3iface.S3API
 	fsys fs.FS
@@ -18,12 +29,14 @@ type FSS3API struct {
 
 var _ s3iface.S3API = (*FSS3API)(nil)
 
+// NewFSS3API returns a s3iface.S3API implementation on the provided filesystem.
 func NewFSS3API(fsys fs.FS) *FSS3API {
 	return &FSS3API{
 		fsys: fsys,
 	}
 }
 
+// GetObject API operation for the filesystem.
 func (api *FSS3API) GetObject(input *s3.GetObjectInput) (*s3.GetObjectOutput, error) {
 	name := path.Join(aws.StringValue(input.Bucket), aws.StringValue(input.Key))
 	info, err := fs.Stat(api.fsys, name)
@@ -60,6 +73,7 @@ func (api *FSS3API) GetObject(input *s3.GetObjectInput) (*s3.GetObjectOutput, er
 	}, nil
 }
 
+// PutObject API operation for the filesystem.
 func (api *FSS3API) PutObject(input *s3.PutObjectInput) (*s3.PutObjectOutput, error) {
 	name := path.Join(aws.StringValue(input.Bucket), aws.StringValue(input.Key))
 	output := &s3.PutObjectOutput{}
@@ -80,7 +94,7 @@ func (api *FSS3API) readDir(input *s3.ListObjectsV2Input) (*s3.ListObjectsV2Outp
 	}
 
 	output := &s3.ListObjectsV2Output{}
-	limit := int(aws.Int64Value(input.MaxKeys))
+	limit := getMaxKeys(input.MaxKeys)
 	after := aws.StringValue(input.StartAfter)
 	limited := false
 	truncated := false
@@ -109,7 +123,7 @@ func (api *FSS3API) readDir(input *s3.ListObjectsV2Input) (*s3.ListObjectsV2Outp
 			Size:         aws.Int64(info.Size()),
 			LastModified: aws.Time(info.ModTime()),
 		})
-		limited = (len(output.Contents) >= limit)
+		limited = (int64(len(output.Contents)) >= limit)
 	}
 
 	output.IsTruncated = aws.Bool(truncated)
@@ -119,7 +133,7 @@ func (api *FSS3API) readDir(input *s3.ListObjectsV2Input) (*s3.ListObjectsV2Outp
 func (api *FSS3API) walkDir(input *s3.ListObjectsV2Input) (*s3.ListObjectsV2Output, error) {
 	dir := path.Join(aws.StringValue(input.Bucket), aws.StringValue(input.Prefix))
 	output := &s3.ListObjectsV2Output{}
-	limit := int(aws.Int64Value(input.MaxKeys))
+	limit := getMaxKeys(input.MaxKeys)
 	after := aws.StringValue(input.StartAfter)
 	limited := false
 	truncated := false
@@ -145,7 +159,7 @@ func (api *FSS3API) walkDir(input *s3.ListObjectsV2Input) (*s3.ListObjectsV2Outp
 			Size:         aws.Int64(info.Size()),
 			LastModified: aws.Time(info.ModTime()),
 		})
-		limited = (len(output.Contents) >= limit)
+		limited = (int64(len(output.Contents)) >= limit)
 		return nil
 	})
 	if err != nil {
@@ -156,6 +170,7 @@ func (api *FSS3API) walkDir(input *s3.ListObjectsV2Input) (*s3.ListObjectsV2Outp
 	return output, nil
 }
 
+// ListObjectsV2 API operation for the filesystem.
 func (api *FSS3API) ListObjectsV2(input *s3.ListObjectsV2Input) (*s3.ListObjectsV2Output, error) {
 	if aws.StringValue(input.Delimiter) == "/" {
 		return api.readDir(input)
