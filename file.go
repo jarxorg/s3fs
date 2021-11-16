@@ -72,9 +72,9 @@ func newS3WriterFile(fsys *S3FS, key string) *s3WriterFile {
 
 // Write writes the specified bytes to this file.
 func (f *s3WriterFile) Write(p []byte) (int, error) {
-  if f.buf == nil {
-    return 0, toPathError(fs.ErrClosed, "Write", f.key)
-  }
+	if f.buf == nil {
+		return 0, toPathError(fs.ErrClosed, "Write", f.key)
+	}
 	f.wrote = true
 	return f.buf.Write(p)
 }
@@ -84,10 +84,10 @@ func (f *s3WriterFile) Close() error {
 	if !f.wrote {
 		return nil
 	}
-  if f.buf == nil {
-    return toPathError(fs.ErrClosed, "Close", f.key)
-  }
-  input := &s3.PutObjectInput{
+	if f.buf == nil {
+		return toPathError(fs.ErrClosed, "Close", f.key)
+	}
+	input := &s3.PutObjectInput{
 		Bucket: aws.String(f.fsys.bucket),
 		Key:    aws.String(f.fsys.key(f.key)),
 		Body:   bytes.NewReader(f.buf.Bytes()),
@@ -100,9 +100,9 @@ func (f *s3WriterFile) Close() error {
 
 // Read reads bytes from this file.
 func (f *s3WriterFile) Read(p []byte) (int, error) {
-  if f.buf == nil {
-    return 0, &fs.PathError{Op: "Read", Path: f.key, Err: fs.ErrClosed}
-  }
+	if f.buf == nil {
+		return 0, &fs.PathError{Op: "Read", Path: f.key, Err: fs.ErrClosed}
+	}
 	return f.buf.Read(p)
 }
 

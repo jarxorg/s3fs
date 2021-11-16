@@ -24,8 +24,8 @@ func newS3Dir(fsys *S3FS, prefix string) *s3Dir {
 	prefix = normalizePrefix(fsys.key(prefix))
 	return &s3Dir{
 		content: newDirContent(prefix),
-		fsys:   fsys,
-		prefix: prefix,
+		fsys:    fsys,
+		prefix:  prefix,
 	}
 }
 

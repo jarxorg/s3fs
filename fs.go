@@ -24,10 +24,10 @@ type S3FS struct {
 	DirOpenBufferSize int
 	// ListBufferSize is the buffer size for listing objects that is used on
 	// ReadDir, Glob and RemoveAll. (Default 1000)
-	ListBufferSize    int
-	api               s3iface.S3API
-	bucket            string
-	dir               string
+	ListBufferSize int
+	api            s3iface.S3API
+	bucket         string
+	dir            string
 }
 
 var (
