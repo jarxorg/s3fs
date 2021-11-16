@@ -65,8 +65,9 @@ func newS3WriterFile(fsys *S3FS, key string) *s3WriterFile {
 		content: &content{
 			name: path.Base(key),
 		},
-		key: key,
-		buf: new(bytes.Buffer),
+		fsys: fsys,
+		key:  key,
+		buf:  new(bytes.Buffer),
 	}
 }
 
