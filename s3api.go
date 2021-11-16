@@ -4,6 +4,7 @@ import (
 	"io"
 	"io/fs"
 	"path"
+	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
@@ -146,7 +147,7 @@ func (api *FSS3API) walkDir(input *s3.ListObjectsV2Input) (*s3.ListObjectsV2Outp
 			truncated = true
 			return fs.SkipDir
 		}
-		name := path.Join(aws.StringValue(input.Prefix), d.Name())
+		name := strings.TrimPrefix(p, aws.StringValue(input.Bucket) + "/")
 		if after >= name {
 			return nil
 		}
