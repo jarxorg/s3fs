@@ -10,7 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 )
 
-func isPathErrorNotExist(err error) bool {
+func isNotExist(err error) bool {
 	if err == fs.ErrNotExist {
 		return true
 	}
@@ -31,7 +31,7 @@ func toPathError(err error, op, name string) error {
 }
 
 func toS3NoSuckKeyIfNoExist(err error) error {
-	if isPathErrorNotExist(err) {
+	if isNotExist(err) {
 		return awserr.New(s3.ErrCodeNoSuchKey, "", nil)
 	}
 	return err
@@ -39,7 +39,7 @@ func toS3NoSuckKeyIfNoExist(err error) error {
 
 func normalizePrefix(prefix string) string {
 	prefix = path.Clean(prefix)
-	if prefix == "." {
+	if prefix == "." || prefix == "/" {
 		prefix = ""
 	}
 	if prefix != "" && !strings.HasSuffix(prefix, "/") {
