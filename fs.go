@@ -85,6 +85,9 @@ func (fsys *S3FS) openFile(name string) (*s3File, error) {
 	if !fs.ValidPath(name) {
 		return nil, toPathError(fs.ErrInvalid, "Open", name)
 	}
+	if name == "." || strings.HasSuffix(name, "/.") {
+		return nil, toPathError(fs.ErrNotExist, "Open", name)
+	}
 	input := &s3.GetObjectInput{
 		Bucket: aws.String(fsys.bucket),
 		Key:    aws.String(fsys.key(name)),
@@ -99,7 +102,7 @@ func (fsys *S3FS) openFile(name string) (*s3File, error) {
 // Open opens the named file or directory.
 func (fsys *S3FS) Open(name string) (fs.File, error) {
 	f, err := fsys.openFile(name)
-	if err != nil && isPathErrorNotExist(err) {
+	if err != nil && isNotExist(err) {
 		return newS3Dir(fsys, name).open(fsys.DirOpenBufferSize)
 	}
 	return f, err
@@ -129,7 +132,7 @@ func (fsys *S3FS) ReadFile(name string) ([]byte, error) {
 // of type *PathError.
 func (fsys *S3FS) Stat(name string) (fs.FileInfo, error) {
 	f, err := fsys.openFile(name)
-	if err != nil && isPathErrorNotExist(err) {
+	if err != nil && isNotExist(err) {
 		return newS3Dir(fsys, name).open(1)
 	}
 	return f, err
@@ -153,20 +156,35 @@ func (fsys *S3FS) Glob(pattern string) ([]string, error) {
 		Prefix:  aws.String(normalizePrefix(fsys.dir)),
 		MaxKeys: aws.Int64(int64(fsys.ListBufferSize)),
 	}
+
 	var keys []string
+	matchAppend := func(key string) error {
+		ok, err := path.Match(pattern, key)
+		if err != nil {
+			return toPathError(err, "Glob", pattern)
+		}
+		if ok {
+			keys = append(keys, key)
+		}
+		return nil
+	}
+
+	lastDir := ""
 	for {
 		output, err := fsys.api.ListObjectsV2(input)
 		if err != nil {
 			return nil, toPathError(err, "Glob", pattern)
 		}
 		for _, o := range output.Contents {
-			key := fsys.rel(*o.Key)
-			ok, err := path.Match(pattern, key)
-			if err != nil {
-				return nil, toPathError(err, "Glob", pattern)
+			key := fsys.rel(aws.StringValue(o.Key))
+			if dir := path.Dir(key); dir != lastDir {
+				if err := matchAppend(dir); err != nil {
+					return nil, err
+				}
+				lastDir = dir
 			}
-			if ok {
-				keys = append(keys, key)
+			if err := matchAppend(key); err != nil {
+				return nil, err
 			}
 			input.StartAfter = o.Key
 		}

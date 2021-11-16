@@ -3,6 +3,7 @@ package s3fs
 import (
 	"io"
 	"io/fs"
+	"sort"
 	"syscall"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -62,6 +63,9 @@ func (d *s3Dir) listAll() ([]fs.DirEntry, error) {
 		}
 		allEntries = append(allEntries, entries...)
 	}
+	sort.Slice(allEntries, func(i, j int) bool {
+		return allEntries[i].Name() < allEntries[j].Name()
+	})
 	return allEntries, nil
 }
 

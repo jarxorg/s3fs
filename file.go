@@ -25,8 +25,8 @@ func newS3File(key string, o *s3.GetObjectOutput) *s3File {
 	return &s3File{
 		content: &content{
 			name:    path.Base(key),
-			size:    *o.ContentLength,
-			modTime: *o.LastModified,
+			size:    aws.Int64Value(o.ContentLength),
+			modTime: aws.TimeValue(o.LastModified),
 		},
 		buf: o.Body,
 	}
