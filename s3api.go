@@ -9,6 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
+	"github.com/jarxorg/fs2"
 	"github.com/jarxorg/io2"
 )
 
@@ -78,7 +79,7 @@ func (api *FSS3API) GetObject(input *s3.GetObjectInput) (*s3.GetObjectOutput, er
 func (api *FSS3API) PutObject(input *s3.PutObjectInput) (*s3.PutObjectOutput, error) {
 	name := path.Join(aws.StringValue(input.Bucket), aws.StringValue(input.Key))
 	output := &s3.PutObjectOutput{}
-	f, err := io2.CreateFile(api.fsys, name, fs.ModePerm)
+	f, err := fs2.CreateFile(api.fsys, name, fs.ModePerm)
 	if err != nil {
 		return nil, err
 	}

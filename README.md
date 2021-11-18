@@ -3,9 +3,7 @@
 [![PkgGoDev](https://pkg.go.dev/badge/github.com/jarxorg/s3fs)](https://pkg.go.dev/github.com/jarxorg/s3fs)
 [![Report Card](https://goreportcard.com/badge/github.com/jarxorg/s3fs)](https://goreportcard.com/report/github.com/jarxorg/s3fs)
 
-Go [io/fs](https://pkg.go.dev/io/fs).FS implementation for S3.
-
-Package s3fs depends [github.com/jarxorg/io2](https://github.com/jarxorg/io2) to write files.
+Package s3fs provides an implementation of [fs2](https://pkg.go.dev/github.com/jarxorg/fs2) for S3.
 
 ## Examples
 
@@ -43,13 +41,13 @@ import (
   "io/fs"
   "log"
 
-  "github.com/jarxorg/io2"
+  "github.com/jarxorg/fs2"
   "github.com/jarxorg/s3fs"
 )
 
 func main() {
   fsys := s3fs.New("<your-bucket>")
-  _, err := io2.WriteFile(fsys, "test.txt", []byte(`Hello`), fs.ModePerm)
+  _, err := fs2.WriteFile(fsys, "test.txt", []byte(`Hello`), fs.ModePerm)
   if err != nil {
     log.Fatal(err)
   }

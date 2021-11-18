@@ -5,15 +5,15 @@ import (
 	"testing/fstest"
 
 	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/jarxorg/io2"
-	"github.com/jarxorg/io2/memfs"
-	"github.com/jarxorg/io2/osfs"
+	"github.com/jarxorg/fs2"
+	"github.com/jarxorg/fs2/memfs"
+	"github.com/jarxorg/fs2/osfs"
 )
 
 func newMemFSTest() (*memfs.MemFS, error) {
 	osFsys := osfs.New(".")
 	memFsys := memfs.New()
-	err := io2.CopyFS(memFsys, osFsys, "testdata")
+	err := fs2.CopyFS(memFsys, osFsys, "testdata")
 	if err != nil {
 		return nil, err
 	}
