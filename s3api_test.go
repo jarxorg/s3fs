@@ -11,7 +11,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/jarxorg/io2"
+	"github.com/jarxorg/fs2"
 )
 
 func TestGetObject(t *testing.T) {
@@ -57,7 +57,7 @@ func TestGetObject(t *testing.T) {
 
 func TestGetObject_OutputBodyReadError(t *testing.T) {
 	wantErr := errors.New("test")
-	fsys := io2.DelegateFS(newMemFSTesting(t))
+	fsys := fs2.DelegateFS(newMemFSTesting(t))
 	fsys.OpenFunc = func(name string) (fs.File, error) {
 		return nil, wantErr
 	}
@@ -99,7 +99,7 @@ func TestGetObject_OutputBodyClose(t *testing.T) {
 
 func TestGetObject_StatError(t *testing.T) {
 	wantErr := errors.New("test")
-	fsys := io2.DelegateFS(newMemFSTesting(t))
+	fsys := fs2.DelegateFS(newMemFSTesting(t))
 	fsys.StatFunc = func(name string) (fs.FileInfo, error) {
 		return nil, wantErr
 	}
@@ -159,8 +159,8 @@ func TestPutObject(t *testing.T) {
 
 func TestPutObject_CreateFileError(t *testing.T) {
 	wantErr := errors.New("test")
-	fsys := io2.DelegateFS(newMemFSTesting(t))
-	fsys.CreateFileFunc = func(name string, mode fs.FileMode) (io2.WriterFile, error) {
+	fsys := fs2.DelegateFS(newMemFSTesting(t))
+	fsys.CreateFileFunc = func(name string, mode fs.FileMode) (fs2.WriterFile, error) {
 		return nil, wantErr
 	}
 
@@ -227,10 +227,10 @@ func TestListObjectV2(t *testing.T) {
 
 func TestListObjectV2_DirEntryInfoError(t *testing.T) {
 	wantErr := errors.New("test")
-	fsys := io2.DelegateFS(newMemFSTesting(t))
+	fsys := fs2.DelegateFS(newMemFSTesting(t))
 	fsys.ReadDirFunc = func(name string) ([]fs.DirEntry, error) {
 		return []fs.DirEntry{
-			&io2.DirEntryDelegator{
+			&fs2.DirEntryDelegator{
 				InfoFunc: func() (fs.FileInfo, error) {
 					return nil, wantErr
 				},
@@ -303,7 +303,7 @@ func TestListObjectV2_Delimiter(t *testing.T) {
 
 func TestListObjectV2_Delimiter_ReadDirError(t *testing.T) {
 	wantErr := errors.New("test")
-	fsys := io2.DelegateFS(newMemFSTesting(t))
+	fsys := fs2.DelegateFS(newMemFSTesting(t))
 	fsys.ReadDirFunc = func(name string) ([]fs.DirEntry, error) {
 		return nil, wantErr
 	}
@@ -322,11 +322,11 @@ func TestListObjectV2_Delimiter_ReadDirError(t *testing.T) {
 
 func TestListObjectV2_Delimiter_DirEntryInfoError(t *testing.T) {
 	wantErr := errors.New("test")
-	fsys := io2.DelegateFS(newMemFSTesting(t))
+	fsys := fs2.DelegateFS(newMemFSTesting(t))
 	fsys.ReadDirFunc = func(name string) ([]fs.DirEntry, error) {
 		return []fs.DirEntry{
-			&io2.DirEntryDelegator{
-				Values: io2.DirEntryValues{
+			&fs2.DirEntryDelegator{
+				Values: fs2.DirEntryValues{
 					Name: "test",
 				},
 				InfoFunc: func() (fs.FileInfo, error) {
