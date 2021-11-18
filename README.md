@@ -3,7 +3,7 @@
 [![PkgGoDev](https://pkg.go.dev/badge/github.com/jarxorg/s3fs)](https://pkg.go.dev/github.com/jarxorg/s3fs)
 [![Report Card](https://goreportcard.com/badge/github.com/jarxorg/s3fs)](https://goreportcard.com/report/github.com/jarxorg/s3fs)
 
-Package s3fs provides an implementation of [fs2](https://pkg.go.dev/github.com/jarxorg/fs2) for S3.
+Package s3fs provides an implementation of [fs2](https://github.com/jarxorg/fs2) for S3.
 
 ## Examples
 
@@ -75,5 +75,7 @@ if err := fstest.TestFS(fsys, "<your-expected>"); err != nil {
 ## Integration tests
 
 ```sh
-FSTEST_BUCKET=<Your Bucket> FSTEST_EXPECTED=<Your Directory> go test -tags integtest ./...
+FSTEST_BUCKET="<your-bucket>" \
+FSTEST_EXPECTED="<your-expected>" \
+  go test -tags integtest ./...
 ```
