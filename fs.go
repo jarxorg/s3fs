@@ -5,12 +5,13 @@ import (
 	"io/ioutil"
 	"path"
 	"strings"
+	"syscall"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
-	"github.com/jarxorg/fs2"
+	"github.com/jarxorg/wfs"
 )
 
 const (
@@ -37,8 +38,8 @@ var (
 	_ fs.ReadFileFS    = (*S3FS)(nil)
 	_ fs.StatFS        = (*S3FS)(nil)
 	_ fs.SubFS         = (*S3FS)(nil)
-	_ fs2.WriteFileFS  = (*S3FS)(nil)
-	_ fs2.RemoveFileFS = (*S3FS)(nil)
+	_ wfs.WriteFileFS  = (*S3FS)(nil)
+	_ wfs.RemoveFileFS = (*S3FS)(nil)
 )
 
 // New returns a filesystem for the tree of objects rooted at the specified bucket.
@@ -202,17 +203,34 @@ func (fsys *S3FS) MkdirAll(dir string, mode fs.FileMode) error {
 
 // CreateFile creates the named file.
 // The specified mode is ignored.
-func (fsys *S3FS) CreateFile(name string, mode fs.FileMode) (fs2.WriterFile, error) {
+func (fsys *S3FS) CreateFile(name string, mode fs.FileMode) (wfs.WriterFile, error) {
 	if !fs.ValidPath(name) {
 		return nil, toPathError(fs.ErrInvalid, "CreateFile", name)
 	}
+
+	if _, err := fsys.openFile(name); err != nil {
+		if !isNotExist(err) {
+			return nil, toPathError(err, "CreateFile", name)
+		}
+		if _, err := newS3Dir(fsys, name).open(1); err == nil {
+			return nil, toPathError(syscall.EISDIR, "CreateFile", name)
+		}
+	}
+	dir := path.Dir(name)
+	if _, err := fsys.openFile(dir); err == nil {
+		return nil, toPathError(syscall.ENOTDIR, "CreateFile", dir)
+	}
+
 	return newS3WriterFile(fsys, name), nil
 }
 
 // WriteFile writes the specified bytes to the named file.
 // The specified mode is ignored.
 func (fsys *S3FS) WriteFile(name string, p []byte, mode fs.FileMode) (int, error) {
-	w := newS3WriterFile(fsys, name)
+	w, err := fsys.CreateFile(name, mode)
+	if err != nil {
+		return 0, err
+	}
 	n, err := w.Write(p)
 	if err != nil {
 		return 0, toPathError(err, "Write", name)

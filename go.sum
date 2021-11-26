@@ -2,10 +2,10 @@ github.com/aws/aws-sdk-go v1.42.0 h1:BMZws0t8NAhHFsfnT3B40IwD13jVDG5KerlRksctVIw
 github.com/aws/aws-sdk-go v1.42.0/go.mod h1:585smgzpB/KqRA+K3y/NL/oYRqQvpNJYvLm+LY1U59Q=
 github.com/davecgh/go-spew v1.1.0 h1:ZDRjVQ15GmhC3fiQ8ni8+OwkZQO4DARzQgrnXU1Liz8=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
-github.com/jarxorg/fs2 v0.1.0 h1:Yh47tPSxCbnBGDLn/cFsAIuVbiFZDudxgCvuLbSInXk=
-github.com/jarxorg/fs2 v0.1.0/go.mod h1:43EJs0qA+K1971J2plPSdX0NNwLD3YCVAzra1aT+hlI=
 github.com/jarxorg/io2 v0.3.6 h1:lgySJD7MhhQd+Jgsi9KQ6VJ4zCXZ2YQWOfpBvDyVug8=
 github.com/jarxorg/io2 v0.3.6/go.mod h1:8QgcffRwfV6AFbwwTxVtUqtoR0adjM95pQIyJCV0oGE=
+github.com/jarxorg/wfs v0.3.0 h1:P6dww91sdU44lzoNoKfvWUnf5+fj7rlpSOXG1BYeKY8=
+github.com/jarxorg/wfs v0.3.0/go.mod h1:pn4jy4b0NoGg5Gu603UGOjWbacCDBlUHW/895q9YQDA=
 github.com/jmespath/go-jmespath v0.4.0 h1:BEgLn5cpjn8UN1mAw4NjwDrS35OdebyEtFe+9YPoQUg=
 github.com/jmespath/go-jmespath v0.4.0/go.mod h1:T8mJZnbsbmF+m6zOOFylbeCJqk5+pHWvzYPziyZiYoo=
 github.com/jmespath/go-jmespath/internal/testify v1.5.1 h1:shLQSRRSCCPj3f2gpwzGwWFoC7ycTf1rcQZHOlsJ6N8=

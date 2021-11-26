@@ -1,19 +1,21 @@
 package s3fs
 
 import (
+	"io/fs"
 	"testing"
 	"testing/fstest"
 
 	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/jarxorg/fs2"
-	"github.com/jarxorg/fs2/memfs"
-	"github.com/jarxorg/fs2/osfs"
+	"github.com/jarxorg/wfs"
+	"github.com/jarxorg/wfs/memfs"
+	"github.com/jarxorg/wfs/osfs"
+	"github.com/jarxorg/wfs/wfstest"
 )
 
 func newMemFSTest() (*memfs.MemFS, error) {
 	osFsys := osfs.New(".")
 	memFsys := memfs.New()
-	err := fs2.CopyFS(memFsys, osFsys, "testdata")
+	err := wfs.CopyFS(memFsys, osFsys, "testdata")
 	if err != nil {
 		return nil, err
 	}
@@ -74,11 +76,18 @@ func (m *mockFSS3API) ListObjectsV2(input *s3.ListObjectsV2Input) (*s3.ListObjec
 
 func TestFS(t *testing.T) {
 	fsys := NewWithAPI("testdata", newMockFSS3APITesting(t))
-
-	if err := fstest.TestFS(fsys, "dir0"); err != nil {
+	if err := fstest.TestFS(fsys, "dir0", "dir0/file01.txt"); err != nil {
 		t.Errorf("Error testing/fstest: %+v", err)
 	}
-	if err := fstest.TestFS(fsys, "dir0/file01.txt"); err != nil {
-		t.Errorf("Error testing/fstest: %+v", err)
+}
+
+func TestWriteFileFS(t *testing.T) {
+	fsys := NewWithAPI("testdata", newMockFSS3APITesting(t))
+	tmpDir := "test"
+	if err := wfs.MkdirAll(fsys, tmpDir, fs.ModePerm); err != nil {
+		t.Fatal(err)
+	}
+	if err := wfstest.TestWriteFileFS(fsys, tmpDir); err != nil {
+		t.Errorf("Error wfstest: %+v", err)
 	}
 }

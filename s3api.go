@@ -9,8 +9,8 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
-	"github.com/jarxorg/fs2"
 	"github.com/jarxorg/io2"
+	"github.com/jarxorg/wfs"
 )
 
 const defaultMaxKeys = int64(1000)
@@ -79,7 +79,7 @@ func (api *FSS3API) GetObject(input *s3.GetObjectInput) (*s3.GetObjectOutput, er
 func (api *FSS3API) PutObject(input *s3.PutObjectInput) (*s3.PutObjectOutput, error) {
 	name := path.Join(aws.StringValue(input.Bucket), aws.StringValue(input.Key))
 	output := &s3.PutObjectOutput{}
-	f, err := fs2.CreateFile(api.fsys, name, fs.ModePerm)
+	f, err := wfs.CreateFile(api.fsys, name, fs.ModePerm)
 	if err != nil {
 		return nil, err
 	}
@@ -178,4 +178,26 @@ func (api *FSS3API) ListObjectsV2(input *s3.ListObjectsV2Input) (*s3.ListObjects
 		return api.readDir(input)
 	}
 	return api.walkDir(input)
+}
+
+// DeleteObject API operation for the filesystem.
+func (api *FSS3API) DeleteObject(input *s3.DeleteObjectInput) (*s3.DeleteObjectOutput, error) {
+	name := path.Join(aws.StringValue(input.Bucket), aws.StringValue(input.Key))
+	if err := wfs.RemoveFile(api.fsys, name); err != nil {
+		return nil, toS3NoSuckKeyIfNoExist(err)
+	}
+	return &s3.DeleteObjectOutput{}, nil
+}
+
+// DeleteObjects API operation for the filesystem.
+func (api *FSS3API) DeleteObjects(input *s3.DeleteObjectsInput) (*s3.DeleteObjectsOutput, error) {
+	dirs := map[string]interface{}{}
+	for _, id := range input.Delete.Objects {
+		name := path.Join(aws.StringValue(input.Bucket), aws.StringValue(id.Key))
+		if err := wfs.RemoveFile(api.fsys, name); err != nil {
+			return nil, toS3NoSuckKeyIfNoExist(err)
+		}
+		dirs[path.Dir(name)] = nil
+	}
+	return &s3.DeleteObjectsOutput{}, nil
 }

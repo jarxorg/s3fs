@@ -8,7 +8,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/jarxorg/fs2"
+	"github.com/jarxorg/wfs"
 )
 
 type s3File struct {
@@ -56,7 +56,7 @@ type s3WriterFile struct {
 }
 
 var (
-	_ fs2.WriterFile = (*s3WriterFile)(nil)
+	_ wfs.WriterFile = (*s3WriterFile)(nil)
 	_ fs.FileInfo    = (*s3WriterFile)(nil)
 )
 
