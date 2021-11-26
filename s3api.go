@@ -179,3 +179,25 @@ func (api *FSS3API) ListObjectsV2(input *s3.ListObjectsV2Input) (*s3.ListObjects
 	}
 	return api.walkDir(input)
 }
+
+// DeleteObject API operation for the filesystem.
+func (api *FSS3API) DeleteObject(input *s3.DeleteObjectInput) (*s3.DeleteObjectOutput, error) {
+	name := path.Join(aws.StringValue(input.Bucket), aws.StringValue(input.Key))
+	if err := wfs.RemoveFile(api.fsys, name); err != nil {
+		return nil, toS3NoSuckKeyIfNoExist(err)
+	}
+	return &s3.DeleteObjectOutput{}, nil
+}
+
+// DeleteObjects API operation for the filesystem.
+func (api *FSS3API) DeleteObjects(input *s3.DeleteObjectsInput) (*s3.DeleteObjectsOutput, error) {
+	dirs := map[string]interface{}{}
+	for _, id := range input.Delete.Objects {
+		name := path.Join(aws.StringValue(input.Bucket), aws.StringValue(id.Key))
+		if err := wfs.RemoveFile(api.fsys, name); err != nil {
+			return nil, toS3NoSuckKeyIfNoExist(err)
+		}
+		dirs[path.Dir(name)] = nil
+	}
+	return &s3.DeleteObjectsOutput{}, nil
+}
