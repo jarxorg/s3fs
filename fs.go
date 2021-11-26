@@ -10,7 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
-	"github.com/jarxorg/fs2"
+	"github.com/jarxorg/wfs"
 )
 
 const (
@@ -37,8 +37,8 @@ var (
 	_ fs.ReadFileFS    = (*S3FS)(nil)
 	_ fs.StatFS        = (*S3FS)(nil)
 	_ fs.SubFS         = (*S3FS)(nil)
-	_ fs2.WriteFileFS  = (*S3FS)(nil)
-	_ fs2.RemoveFileFS = (*S3FS)(nil)
+	_ wfs.WriteFileFS  = (*S3FS)(nil)
+	_ wfs.RemoveFileFS = (*S3FS)(nil)
 )
 
 // New returns a filesystem for the tree of objects rooted at the specified bucket.
@@ -202,7 +202,7 @@ func (fsys *S3FS) MkdirAll(dir string, mode fs.FileMode) error {
 
 // CreateFile creates the named file.
 // The specified mode is ignored.
-func (fsys *S3FS) CreateFile(name string, mode fs.FileMode) (fs2.WriterFile, error) {
+func (fsys *S3FS) CreateFile(name string, mode fs.FileMode) (wfs.WriterFile, error) {
 	if !fs.ValidPath(name) {
 		return nil, toPathError(fs.ErrInvalid, "CreateFile", name)
 	}
