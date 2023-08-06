@@ -3,7 +3,6 @@ package s3fs
 import (
 	"io/fs"
 	"path"
-	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -24,7 +23,7 @@ var (
 
 func newDirContent(prefix string) *content {
 	return &content{
-		name:  strings.TrimSuffix(prefix, "/"),
+		name:  path.Base(prefix),
 		isDir: true,
 	}
 }
