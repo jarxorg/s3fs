@@ -3,8 +3,8 @@ package s3fs
 import (
 	"bytes"
 	"errors"
+	"io"
 	"io/fs"
-	"io/ioutil"
 	"reflect"
 	"strings"
 	"testing"
@@ -26,7 +26,7 @@ func TestGetObject(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want, err := ioutil.ReadAll(f)
+	want, err := io.ReadAll(f)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -42,7 +42,7 @@ func TestGetObject(t *testing.T) {
 	}
 	defer output.Body.Close()
 
-	got, err := ioutil.ReadAll(output.Body)
+	got, err := io.ReadAll(output.Body)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -151,7 +151,7 @@ func TestPutObject(t *testing.T) {
 	}
 	defer f.Close()
 
-	got, err := ioutil.ReadAll(f)
+	got, err := io.ReadAll(f)
 	if string(got) != string(want) {
 		t.Errorf(`Error PutObject wrote %s; want %s`, got, want)
 	}

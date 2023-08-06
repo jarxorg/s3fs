@@ -1,8 +1,8 @@
 package s3fs
 
 import (
+	"io"
 	"io/fs"
-	"io/ioutil"
 	"path"
 	"strings"
 	"syscall"
@@ -45,11 +45,11 @@ var (
 // New returns a filesystem for the tree of objects rooted at the specified bucket.
 // This function is the same as the following code.
 //
-//   NewWithSession(bucket, session.Must(
-//     session.NewSessionWithOptions(
-//       session.Options{SharedConfigState: session.SharedConfigEnable}
-//     )
-//   ))
+//	NewWithSession(bucket, session.Must(
+//	  session.NewSessionWithOptions(
+//	    session.Options{SharedConfigState: session.SharedConfigEnable}
+//	  )
+//	))
 func New(bucket string) *S3FS {
 	sess := session.Must(session.NewSessionWithOptions(session.Options{
 		SharedConfigState: session.SharedConfigEnable,
@@ -126,7 +126,7 @@ func (fsys *S3FS) ReadFile(name string) ([]byte, error) {
 	}
 	defer f.Close()
 
-	return ioutil.ReadAll(f)
+	return io.ReadAll(f)
 }
 
 // Stat returns a FileInfo describing the file. If there is an error, it should be
