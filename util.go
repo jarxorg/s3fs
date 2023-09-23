@@ -47,3 +47,36 @@ func normalizePrefix(prefix string) string {
 	}
 	return prefix
 }
+
+func normalizePrefixPattern(prefix, pattern string) string {
+	prefix = normalizePrefix(prefix)
+LOOP:
+	for i, c := range pattern {
+		switch c {
+		case '*', '?', '[', '\\':
+			pattern = pattern[:i]
+			break LOOP
+		}
+	}
+	joined := path.Join(prefix, pattern)
+	if strings.HasSuffix(pattern, "/") {
+		return joined + "/"
+	}
+	return joined
+}
+
+func contains(keys []string, key string) bool {
+	for _, k := range keys {
+		if k == key {
+			return true
+		}
+	}
+	return false
+}
+
+func appendIfMatch(keys []string, key, pattern string) []string {
+	if ok, _ := path.Match(pattern, key); ok && !contains(keys, key) {
+		keys = append(keys, key)
+	}
+	return keys
+}

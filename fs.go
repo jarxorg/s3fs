@@ -152,25 +152,18 @@ func (fsys *S3FS) Sub(dir string) (fs.FS, error) {
 // Glob returns the names of all files matching pattern, providing an implementation
 // of the top-level Glob function.
 func (fsys *S3FS) Glob(pattern string) ([]string, error) {
+	// NOTE: Validate pattern
+	if _, err := path.Match(pattern, ""); err != nil {
+		return nil, toPathError(err, "Glob", pattern)
+	}
 	input := &s3.ListObjectsV2Input{
 		Bucket:  aws.String(fsys.bucket),
-		Prefix:  aws.String(normalizePrefix(fsys.dir)),
+		Prefix:  aws.String(normalizePrefixPattern(fsys.dir, pattern)),
 		MaxKeys: aws.Int64(int64(fsys.ListBufferSize)),
 	}
 
 	var keys []string
-	matchAppend := func(key string) error {
-		ok, err := path.Match(pattern, key)
-		if err != nil {
-			return toPathError(err, "Glob", pattern)
-		}
-		if ok {
-			keys = append(keys, key)
-		}
-		return nil
-	}
-
-	lastDir := ""
+	var lastDir string
 	for {
 		output, err := fsys.api.ListObjectsV2(input)
 		if err != nil {
@@ -179,14 +172,13 @@ func (fsys *S3FS) Glob(pattern string) ([]string, error) {
 		for _, o := range output.Contents {
 			key := fsys.rel(aws.StringValue(o.Key))
 			if dir := path.Dir(key); dir != lastDir {
-				if err := matchAppend(dir); err != nil {
-					return nil, err
-				}
 				lastDir = dir
+				for dir != "." {
+					keys = appendIfMatch(keys, dir, pattern)
+					dir = path.Dir(dir)
+				}
 			}
-			if err := matchAppend(key); err != nil {
-				return nil, err
-			}
+			keys = appendIfMatch(keys, key, pattern)
 			input.StartAfter = o.Key
 		}
 		if !*output.IsTruncated {

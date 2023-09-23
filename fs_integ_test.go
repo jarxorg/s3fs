@@ -1,9 +1,11 @@
+//go:build integtest
 // +build integtest
 
 package s3fs
 
 import (
 	"os"
+	"strings"
 	"testing"
 	"testing/fstest"
 )
@@ -16,7 +18,7 @@ func TestFSIntegration(t *testing.T) {
 	}
 
 	fsys := New(bucket)
-	if err := fstest.TestFS(fsys, expected); err != nil {
+	if err := fstest.TestFS(fsys, strings.Split(expected, ",")...); err != nil {
 		t.Errorf("Error testing/fstest: %+v", err)
 	}
 }

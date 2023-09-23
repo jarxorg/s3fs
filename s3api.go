@@ -1,10 +1,14 @@
 package s3fs
 
 import (
+	"errors"
 	"io"
 	"io/fs"
+	"os"
 	"path"
+	"path/filepath"
 	"strings"
+	"syscall"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
@@ -88,8 +92,34 @@ func (api *FSS3API) PutObject(input *s3.PutObjectInput) (*s3.PutObjectOutput, er
 	return output, nil
 }
 
+func (api *FSS3API) namePrefixes(dirPtr, prefixPtr *string) (string, string, error) {
+	prefix := aws.StringValue(prefixPtr)
+	namePrefix := ""
+	dirWithPrefix := path.Join(aws.StringValue(dirPtr), prefix)
+	info, err := fs.Stat(api.fsys, dirWithPrefix)
+	if err != nil {
+		if !errors.Is(err, os.ErrNotExist) {
+			return "", "", err
+		}
+		if dirSlash := strings.LastIndex(prefix, "/"); dirSlash != -1 {
+			namePrefix = prefix[dirSlash+1:]
+			prefix = prefix[:dirSlash]
+		} else {
+			namePrefix = prefix
+			prefix = ""
+		}
+	} else if !info.IsDir() {
+		return "", "", &fs.PathError{Op: "readDir", Path: dirWithPrefix, Err: syscall.ENOTDIR}
+	}
+	return prefix, namePrefix, nil
+}
+
 func (api *FSS3API) readDir(input *s3.ListObjectsV2Input) (*s3.ListObjectsV2Output, error) {
-	dir := path.Join(aws.StringValue(input.Bucket), aws.StringValue(input.Prefix))
+	prefix, namePrefix, err := api.namePrefixes(input.Bucket, input.Prefix)
+	if err != nil {
+		return nil, err
+	}
+	dir := path.Join(aws.StringValue(input.Bucket), prefix)
 	entries, err := fs.ReadDir(api.fsys, dir)
 	if err != nil {
 		return nil, toS3NoSuckKeyIfNoExist(err)
@@ -102,7 +132,10 @@ func (api *FSS3API) readDir(input *s3.ListObjectsV2Input) (*s3.ListObjectsV2Outp
 	truncated := false
 
 	for _, entry := range entries {
-		name := path.Join(aws.StringValue(input.Prefix), entry.Name())
+		name := path.Join(prefix, entry.Name())
+		if !strings.HasPrefix(name, namePrefix) {
+			continue
+		}
 		if entry.IsDir() {
 			output.CommonPrefixes = append(output.CommonPrefixes, &s3.CommonPrefix{
 				Prefix: aws.String(name),
@@ -133,22 +166,39 @@ func (api *FSS3API) readDir(input *s3.ListObjectsV2Input) (*s3.ListObjectsV2Outp
 }
 
 func (api *FSS3API) walkDir(input *s3.ListObjectsV2Input) (*s3.ListObjectsV2Output, error) {
-	dir := path.Join(aws.StringValue(input.Bucket), aws.StringValue(input.Prefix))
+	prefix, namePrefix, err := api.namePrefixes(input.Bucket, input.Prefix)
+	if err != nil {
+		return nil, err
+	}
+	root := path.Join(aws.StringValue(input.Bucket), prefix)
 	output := &s3.ListObjectsV2Output{}
 	limit := getMaxKeys(input.MaxKeys)
 	after := aws.StringValue(input.StartAfter)
 	limited := false
 	truncated := false
 
-	err := fs.WalkDir(api.fsys, dir, func(p string, d fs.DirEntry, err error) error {
-		if err != nil || d.IsDir() {
+	err = fs.WalkDir(api.fsys, root, func(name string, d fs.DirEntry, err error) error {
+		if err != nil {
 			return err
+		}
+		if name == root || !strings.HasPrefix(name, namePrefix) {
+			return nil
+		}
+		name, err = filepath.Rel(aws.StringValue(input.Bucket), name)
+		if err != nil {
+			return err
+		}
+
+		if d.IsDir() {
+			output.CommonPrefixes = append(output.CommonPrefixes, &s3.CommonPrefix{
+				Prefix: aws.String(name),
+			})
+			return nil
 		}
 		if limited {
 			truncated = true
 			return fs.SkipDir
 		}
-		name := strings.TrimPrefix(p, aws.StringValue(input.Bucket)+"/")
 		if after >= name {
 			return nil
 		}
