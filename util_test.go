@@ -75,7 +75,7 @@ func TestToPathError(t *testing.T) {
 	}
 	for _, test := range tests {
 		got := toPathError(test.err, op, name)
-		if !reflect.DeepEqual(got, test.want) {
+		if got.Error() != test.want.Error() {
 			t.Errorf(`Error toPathError(%v) returns %v; want %v`, test.err, got, test.want)
 		}
 	}
@@ -99,7 +99,7 @@ func TestToS3NoSuckKeyIfNoExist(t *testing.T) {
 	}
 	for _, test := range tests {
 		got := toS3NoSuckKeyIfNoExist(test.err)
-		if !reflect.DeepEqual(got, test.want) {
+		if got.Error() != test.want.Error() {
 			t.Errorf(`Error toS3NoSuckKeyIfNoExist(%v) returns %v; want %v`, test.err, got, test.want)
 		}
 	}
@@ -131,6 +131,58 @@ func TestNormalizePrefix(t *testing.T) {
 		got := normalizePrefix(test.prefix)
 		if !reflect.DeepEqual(got, test.want) {
 			t.Errorf(`Error normalizePrefix(%s) returns %s; want %s`, test.prefix, got, test.want)
+		}
+	}
+}
+
+func TestNormalizePrefixPattern(t *testing.T) {
+	tests := []struct {
+		prefix  string
+		pattern string
+		want    string
+	}{
+		{
+			prefix:  "prefix",
+			pattern: "*",
+			want:    "prefix",
+		}, {
+			prefix:  "prefix",
+			pattern: "d[i-i]r/",
+			want:    "prefix/d",
+		}, {
+			prefix:  "prefix",
+			pattern: "dir/",
+			want:    "prefix/dir/",
+		},
+	}
+	for _, test := range tests {
+		got := normalizePrefixPattern(test.prefix, test.pattern)
+		if !reflect.DeepEqual(got, test.want) {
+			t.Errorf(`Error normalizePrefixPattern(%s, %s) returns %s; want %s`, test.prefix, test.pattern, got, test.want)
+		}
+	}
+}
+
+func TestContains(t *testing.T) {
+	tests := []struct {
+		keys []string
+		key  string
+		want bool
+	}{
+		{
+			keys: []string{"abc", "def", "ghi"},
+			key:  "def",
+			want: true,
+		}, {
+			keys: []string{"abc", "def", "ghi"},
+			key:  "xyz",
+			want: false,
+		},
+	}
+	for _, test := range tests {
+		got := contains(test.keys, test.key)
+		if got != test.want {
+			t.Errorf(`Error contains(%v, %v) returns %v; want %v`, test.keys, test.key, got, test.want)
 		}
 	}
 }

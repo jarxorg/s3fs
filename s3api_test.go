@@ -240,8 +240,9 @@ func TestListObjectV2_DirEntryInfoError(t *testing.T) {
 
 	api := NewFSS3API(fsys)
 	input := &s3.ListObjectsV2Input{
-		Bucket: aws.String("testdata"),
-		Prefix: aws.String("dir0"),
+		Bucket:    aws.String("testdata"),
+		Prefix:    aws.String("dir0"),
+		Delimiter: aws.String("/"),
 	}
 	_, gotErr := api.ListObjectsV2(input)
 	if gotErr != wantErr {
