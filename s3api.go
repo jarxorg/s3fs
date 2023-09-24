@@ -27,23 +27,23 @@ func getMaxKeys(n *int64) int64 {
 	return i
 }
 
-// FSS3API provides a simple implementation for mocking on test of s3fs package.
-type FSS3API struct {
+// fsS3api provides a simple implementation for mocking on test of s3fs package.
+type fsS3api struct {
 	s3iface.S3API
 	fsys fs.FS
 }
 
-var _ s3iface.S3API = (*FSS3API)(nil)
+var _ s3iface.S3API = (*fsS3api)(nil)
 
-// NewFSS3API returns a s3iface.S3API implementation on the provided filesystem.
-func NewFSS3API(fsys fs.FS) *FSS3API {
-	return &FSS3API{
+// newFsS3api returns a s3iface.S3API implementation on the provided filesystem.
+func newFsS3api(fsys fs.FS) *fsS3api {
+	return &fsS3api{
 		fsys: fsys,
 	}
 }
 
 // GetObject API operation for the filesystem.
-func (api *FSS3API) GetObject(input *s3.GetObjectInput) (*s3.GetObjectOutput, error) {
+func (api *fsS3api) GetObject(input *s3.GetObjectInput) (*s3.GetObjectOutput, error) {
 	name := path.Join(aws.StringValue(input.Bucket), aws.StringValue(input.Key))
 	info, err := fs.Stat(api.fsys, name)
 	if err != nil {
@@ -80,7 +80,7 @@ func (api *FSS3API) GetObject(input *s3.GetObjectInput) (*s3.GetObjectOutput, er
 }
 
 // PutObject API operation for the filesystem.
-func (api *FSS3API) PutObject(input *s3.PutObjectInput) (*s3.PutObjectOutput, error) {
+func (api *fsS3api) PutObject(input *s3.PutObjectInput) (*s3.PutObjectOutput, error) {
 	name := path.Join(aws.StringValue(input.Bucket), aws.StringValue(input.Key))
 	output := &s3.PutObjectOutput{}
 	f, err := wfs.CreateFile(api.fsys, name, fs.ModePerm)
@@ -92,7 +92,7 @@ func (api *FSS3API) PutObject(input *s3.PutObjectInput) (*s3.PutObjectOutput, er
 	return output, nil
 }
 
-func (api *FSS3API) namePrefixes(dirPtr, prefixPtr *string) (string, string, error) {
+func (api *fsS3api) namePrefixes(dirPtr, prefixPtr *string) (string, string, error) {
 	prefix := aws.StringValue(prefixPtr)
 	namePrefix := ""
 	dirWithPrefix := path.Join(aws.StringValue(dirPtr), prefix)
@@ -114,7 +114,7 @@ func (api *FSS3API) namePrefixes(dirPtr, prefixPtr *string) (string, string, err
 	return prefix, namePrefix, nil
 }
 
-func (api *FSS3API) readDir(input *s3.ListObjectsV2Input) (*s3.ListObjectsV2Output, error) {
+func (api *fsS3api) readDir(input *s3.ListObjectsV2Input) (*s3.ListObjectsV2Output, error) {
 	prefix, namePrefix, err := api.namePrefixes(input.Bucket, input.Prefix)
 	if err != nil {
 		return nil, err
@@ -165,7 +165,7 @@ func (api *FSS3API) readDir(input *s3.ListObjectsV2Input) (*s3.ListObjectsV2Outp
 	return output, nil
 }
 
-func (api *FSS3API) walkDir(input *s3.ListObjectsV2Input) (*s3.ListObjectsV2Output, error) {
+func (api *fsS3api) walkDir(input *s3.ListObjectsV2Input) (*s3.ListObjectsV2Output, error) {
 	prefix, namePrefix, err := api.namePrefixes(input.Bucket, input.Prefix)
 	if err != nil {
 		return nil, err
@@ -181,19 +181,12 @@ func (api *FSS3API) walkDir(input *s3.ListObjectsV2Input) (*s3.ListObjectsV2Outp
 		if err != nil {
 			return err
 		}
-		if name == root || !strings.HasPrefix(name, namePrefix) {
+		if name == root || !strings.HasPrefix(name, namePrefix) || d.IsDir() {
 			return nil
 		}
 		name, err = filepath.Rel(aws.StringValue(input.Bucket), name)
 		if err != nil {
 			return err
-		}
-
-		if d.IsDir() {
-			output.CommonPrefixes = append(output.CommonPrefixes, &s3.CommonPrefix{
-				Prefix: aws.String(name),
-			})
-			return nil
 		}
 		if limited {
 			truncated = true
@@ -223,7 +216,7 @@ func (api *FSS3API) walkDir(input *s3.ListObjectsV2Input) (*s3.ListObjectsV2Outp
 }
 
 // ListObjectsV2 API operation for the filesystem.
-func (api *FSS3API) ListObjectsV2(input *s3.ListObjectsV2Input) (*s3.ListObjectsV2Output, error) {
+func (api *fsS3api) ListObjectsV2(input *s3.ListObjectsV2Input) (*s3.ListObjectsV2Output, error) {
 	if aws.StringValue(input.Delimiter) == "/" {
 		return api.readDir(input)
 	}
@@ -231,7 +224,7 @@ func (api *FSS3API) ListObjectsV2(input *s3.ListObjectsV2Input) (*s3.ListObjects
 }
 
 // DeleteObject API operation for the filesystem.
-func (api *FSS3API) DeleteObject(input *s3.DeleteObjectInput) (*s3.DeleteObjectOutput, error) {
+func (api *fsS3api) DeleteObject(input *s3.DeleteObjectInput) (*s3.DeleteObjectOutput, error) {
 	name := path.Join(aws.StringValue(input.Bucket), aws.StringValue(input.Key))
 	if err := wfs.RemoveFile(api.fsys, name); err != nil {
 		return nil, toS3NoSuckKeyIfNoExist(err)
@@ -240,7 +233,7 @@ func (api *FSS3API) DeleteObject(input *s3.DeleteObjectInput) (*s3.DeleteObjectO
 }
 
 // DeleteObjects API operation for the filesystem.
-func (api *FSS3API) DeleteObjects(input *s3.DeleteObjectsInput) (*s3.DeleteObjectsOutput, error) {
+func (api *fsS3api) DeleteObjects(input *s3.DeleteObjectsInput) (*s3.DeleteObjectsOutput, error) {
 	dirs := map[string]interface{}{}
 	for _, id := range input.Delete.Objects {
 		name := path.Join(aws.StringValue(input.Bucket), aws.StringValue(id.Key))
