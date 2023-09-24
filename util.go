@@ -59,7 +59,7 @@ LOOP:
 		}
 	}
 	joined := path.Join(prefix, pattern)
-	if strings.HasSuffix(pattern, "/") {
+	if strings.HasSuffix(pattern, "/") || (joined != "" && pattern == "") {
 		return joined + "/"
 	}
 	return joined
