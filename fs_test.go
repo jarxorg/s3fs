@@ -31,7 +31,7 @@ func newMemFSTesting(t *testing.T) *memfs.MemFS {
 }
 
 type mockFSS3API struct {
-	*FSS3API
+	*fsS3api
 	err error
 }
 
@@ -41,7 +41,7 @@ func newMockFSS3API() (*mockFSS3API, error) {
 		return nil, err
 	}
 	return &mockFSS3API{
-		FSS3API: NewFSS3API(fsys),
+		fsS3api: newFsS3api(fsys),
 	}, nil
 }
 
@@ -57,21 +57,21 @@ func (m *mockFSS3API) GetObject(input *s3.GetObjectInput) (*s3.GetObjectOutput, 
 	if m.err != nil {
 		return nil, m.err
 	}
-	return m.FSS3API.GetObject(input)
+	return m.fsS3api.GetObject(input)
 }
 
 func (m *mockFSS3API) PutObject(input *s3.PutObjectInput) (*s3.PutObjectOutput, error) {
 	if m.err != nil {
 		return nil, m.err
 	}
-	return m.FSS3API.PutObject(input)
+	return m.fsS3api.PutObject(input)
 }
 
 func (m *mockFSS3API) ListObjectsV2(input *s3.ListObjectsV2Input) (*s3.ListObjectsV2Output, error) {
 	if m.err != nil {
 		return nil, m.err
 	}
-	return m.FSS3API.ListObjectsV2(input)
+	return m.fsS3api.ListObjectsV2(input)
 }
 
 func TestFS(t *testing.T) {

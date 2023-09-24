@@ -4,6 +4,7 @@ import (
 	"io"
 	"io/fs"
 	"path"
+	"sort"
 	"strings"
 	"syscall"
 
@@ -152,36 +153,80 @@ func (fsys *S3FS) Sub(dir string) (fs.FS, error) {
 // Glob returns the names of all files matching pattern, providing an implementation
 // of the top-level Glob function.
 func (fsys *S3FS) Glob(pattern string) ([]string, error) {
+	if pattern == "" || pattern == "*" {
+		entries, err := fsys.ReadDir("")
+		if err != nil {
+			return nil, err
+		}
+		var keys []string
+		for _, entry := range entries {
+			keys = append(keys, entry.Name())
+		}
+		return keys, nil
+	}
 	// NOTE: Validate pattern
 	if _, err := path.Match(pattern, ""); err != nil {
 		return nil, toPathError(err, "Glob", pattern)
 	}
-	input := &s3.ListObjectsV2Input{
-		Bucket:  aws.String(fsys.bucket),
-		Prefix:  aws.String(normalizePrefixPattern(fsys.dir, pattern)),
-		MaxKeys: aws.Int64(int64(fsys.ListBufferSize)),
+	keys, err := fsys.glob([]string{""}, strings.Split(pattern, "/"), nil)
+	if err != nil {
+		return nil, err
 	}
+	var matches []string
+	for _, key := range keys {
+		matches = appendIfMatch(matches, key, pattern)
+	}
+	sort.Strings(matches)
+	return matches, nil
+}
 
+func (fsys *S3FS) glob(dirs, patterns []string, matches []string) ([]string, error) {
+	dirOnly := len(patterns) > 1
+	var subDirs []string
+	for _, dir := range dirs {
+		keys, err := fsys.listForGlob(path.Join(dir, patterns[0]), dirOnly)
+		if err != nil {
+			return nil, err
+		}
+		for _, key := range keys {
+			if dirOnly {
+				subDirs = append(subDirs, key)
+			}
+			matches = append(matches, key)
+		}
+	}
+	if len(subDirs) > 0 && dirOnly {
+		return fsys.glob(subDirs, patterns[1:], matches)
+	}
+	return matches, nil
+}
+
+func (fsys *S3FS) listForGlob(pattern string, dirOnly bool) ([]string, error) {
+	input := &s3.ListObjectsV2Input{
+		Bucket:    aws.String(fsys.bucket),
+		Prefix:    aws.String(normalizePrefixPattern(fsys.dir, pattern)),
+		MaxKeys:   aws.Int64(int64(fsys.ListBufferSize)),
+		Delimiter: aws.String("/"),
+	}
 	var keys []string
-	var lastDir string
 	for {
 		output, err := fsys.api.ListObjectsV2(input)
 		if err != nil {
 			return nil, toPathError(err, "Glob", pattern)
 		}
+		for _, p := range output.CommonPrefixes {
+			key := strings.TrimRight(fsys.rel(aws.StringValue(p.Prefix)), "/")
+			keys = appendIfMatch(keys, key, pattern)
+		}
+		if dirOnly {
+			return keys, nil
+		}
 		for _, o := range output.Contents {
 			key := fsys.rel(aws.StringValue(o.Key))
-			if dir := path.Dir(key); dir != lastDir {
-				lastDir = dir
-				for dir != "." {
-					keys = appendIfMatch(keys, dir, pattern)
-					dir = path.Dir(dir)
-				}
-			}
 			keys = appendIfMatch(keys, key, pattern)
 			input.StartAfter = o.Key
 		}
-		if !*output.IsTruncated {
+		if !aws.BoolValue(output.IsTruncated) {
 			break
 		}
 	}

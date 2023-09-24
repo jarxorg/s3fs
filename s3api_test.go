@@ -31,7 +31,7 @@ func TestGetObject(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	api := NewFSS3API(fsys)
+	api := newFsS3api(fsys)
 	input := &s3.GetObjectInput{
 		Bucket: aws.String("testdata"),
 		Key:    aws.String("dir0/file01.txt"),
@@ -62,7 +62,7 @@ func TestGetObject_OutputBodyReadError(t *testing.T) {
 		return nil, wantErr
 	}
 
-	api := NewFSS3API(fsys)
+	api := newFsS3api(fsys)
 	input := &s3.GetObjectInput{
 		Bucket: aws.String("testdata"),
 		Key:    aws.String("dir0/file01.txt"),
@@ -82,7 +82,7 @@ func TestGetObject_OutputBodyReadError(t *testing.T) {
 func TestGetObject_OutputBodyClose(t *testing.T) {
 	fsys := newMemFSTesting(t)
 
-	api := NewFSS3API(fsys)
+	api := newFsS3api(fsys)
 	input := &s3.GetObjectInput{
 		Bucket: aws.String("testdata"),
 		Key:    aws.String("dir0/file01.txt"),
@@ -104,7 +104,7 @@ func TestGetObject_StatError(t *testing.T) {
 		return nil, wantErr
 	}
 
-	api := NewFSS3API(fsys)
+	api := newFsS3api(fsys)
 	input := &s3.GetObjectInput{
 		Bucket: aws.String("testdata"),
 		Key:    aws.String("dir0/file01.txt"),
@@ -118,7 +118,7 @@ func TestGetObject_StatError(t *testing.T) {
 func TestGetObject_DirError(t *testing.T) {
 	fsys := newMemFSTesting(t)
 
-	api := NewFSS3API(fsys)
+	api := newFsS3api(fsys)
 	input := &s3.GetObjectInput{
 		Bucket: aws.String("testdata"),
 		Key:    aws.String("dir0"),
@@ -134,7 +134,7 @@ func TestPutObject(t *testing.T) {
 	fsys := newMemFSTesting(t)
 	want := []byte("test")
 
-	api := NewFSS3API(fsys)
+	api := newFsS3api(fsys)
 	input := &s3.PutObjectInput{
 		Bucket: aws.String("testdata"),
 		Key:    aws.String("test.txt"),
@@ -164,7 +164,7 @@ func TestPutObject_CreateFileError(t *testing.T) {
 		return nil, wantErr
 	}
 
-	api := NewFSS3API(fsys)
+	api := newFsS3api(fsys)
 	input := &s3.PutObjectInput{
 		Bucket: aws.String("testdata"),
 		Key:    aws.String("test.txt"),
@@ -209,7 +209,7 @@ func TestListObjectV2(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	api := NewFSS3API(fsys)
+	api := newFsS3api(fsys)
 	input := &s3.ListObjectsV2Input{
 		Bucket:     aws.String("testdata"),
 		Prefix:     aws.String("dir0"),
@@ -238,7 +238,7 @@ func TestListObjectV2_DirEntryInfoError(t *testing.T) {
 		}, nil
 	}
 
-	api := NewFSS3API(fsys)
+	api := newFsS3api(fsys)
 	input := &s3.ListObjectsV2Input{
 		Bucket:    aws.String("testdata"),
 		Prefix:    aws.String("dir0"),
@@ -285,7 +285,7 @@ func TestListObjectV2_Delimiter(t *testing.T) {
 		}
 	}
 
-	api := NewFSS3API(fsys)
+	api := newFsS3api(fsys)
 	input := &s3.ListObjectsV2Input{
 		Bucket:     aws.String("testdata"),
 		Prefix:     aws.String(""),
@@ -309,7 +309,7 @@ func TestListObjectV2_Delimiter_ReadDirError(t *testing.T) {
 		return nil, wantErr
 	}
 
-	api := NewFSS3API(fsys)
+	api := newFsS3api(fsys)
 	input := &s3.ListObjectsV2Input{
 		Bucket:    aws.String("testdata"),
 		Prefix:    aws.String(""),
@@ -337,7 +337,7 @@ func TestListObjectV2_Delimiter_DirEntryInfoError(t *testing.T) {
 		}, nil
 	}
 
-	api := NewFSS3API(fsys)
+	api := newFsS3api(fsys)
 	input := &s3.ListObjectsV2Input{
 		Bucket:    aws.String("testdata"),
 		Prefix:    aws.String(""),

@@ -144,7 +144,7 @@ func TestNormalizePrefixPattern(t *testing.T) {
 		{
 			prefix:  "prefix",
 			pattern: "*",
-			want:    "prefix",
+			want:    "prefix/",
 		}, {
 			prefix:  "prefix",
 			pattern: "d[i-i]r/",
